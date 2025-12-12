@@ -6,6 +6,7 @@ A lightweight web-based scanner bridge for Paperless-ngx — runs as a Docker co
 
 - 📄 Web-based scanning interface to trigger scans
 - ⚙️ Persistent settings (saved to `config.json`)
+ - ⚙️ Persistent settings (saved to `config/config.json`)
 - 🔧 Connection testing to verify Paperless-ngx access
 - 📜 Real-time logs (server-sent events)
 - 🏷️ Configurable default tags for uploads
@@ -24,7 +25,7 @@ docker run --rm -it \
    -p 3000:3000 \
    --device /dev/bus/usb:/dev/bus/usb \
    -v $(pwd)/scans:/tmp \
-   -v $(pwd)/config.json:/usr/src/app/config.json:ro \
+   -v $(pwd)/config:/usr/src/app/config:rw \
    --privileged \
    fakeridoo/paperless-scanner:latest
 ```
@@ -43,7 +44,7 @@ services:
          - "3000:3000"
       volumes:
          - ./scans:/tmp
-         - ./config.json:/usr/src/app/config.json:ro
+         - ./config:/usr/src/app/config:rw
       devices:
          - "/dev/bus/usb:/dev/bus/usb"
       network_mode: host
