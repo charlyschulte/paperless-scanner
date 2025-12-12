@@ -32,5 +32,9 @@ EXPOSE 3000
 # Fix Bun runtime permissions and ensure required folders exist
 RUN mkdir -p /tmp && chown -R root:root /usr/src/app
 
+# Copy templates to a stable location that won't be masked by mounting /usr/src/app
+COPY --from=builder /usr/src/app/templates /usr/share/paperless-scanner/templates
+RUN mkdir -p /usr/share/paperless-scanner/templates && chown -R root:root /usr/share/paperless-scanner
+
 # Default command: run the main TypeScript entry with Bun
 CMD ["bun", "index.ts"]
