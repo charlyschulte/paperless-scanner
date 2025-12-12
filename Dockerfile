@@ -6,6 +6,9 @@ WORKDIR /usr/src/app
 COPY package.json tsconfig.json ./
 COPY .env* ./
 
+# Copy static templates into the build context so they are baked into the image
+COPY templates ./templates
+
 # Copy app files (type=module + TypeScript source files)
 COPY . .
 
