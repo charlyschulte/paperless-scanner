@@ -7,7 +7,7 @@ services:
       - "3000:3000"
     volumes:
       - ./scans:/tmp
-      - ./config.json:/usr/src/app/config.json:ro
+      - ./config:/usr/src/app/config:rw
       - ./scan-output:/tmp
     # Scanner containers generally need host device access. Provide guidance to run with --device or privileged
     devices:

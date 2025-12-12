@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS: Settings = {
   scannerDeviceUrl: "" // Empty means auto-detect
 };
 
-const SETTINGS_FILE = path.join(process.cwd(), "config.json");
+const SETTINGS_FILE = path.join(process.cwd(), "config", "config.json");
 
 class SettingsManager {
   private settings: Settings;
@@ -43,6 +43,11 @@ class SettingsManager {
 
   private saveSettings(): void {
     try {
+      // Ensure directory exists before saving (useful when mounting a config directory)
+      const dir = path.dirname(SETTINGS_FILE);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
       fs.writeFileSync(SETTINGS_FILE, JSON.stringify(this.settings, null, 2));
     } catch (error) {
       console.error("Failed to save settings:", error);
