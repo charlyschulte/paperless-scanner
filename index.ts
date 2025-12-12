@@ -3,6 +3,7 @@ import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 import { settingsManager } from "./settings.js";
+import { fileURLToPath } from "url";
 import { PaperlessAPI } from "./paperless-api.js";
 import { DocumentSessionManager } from "./document-session.js";
 import { ScannerManager } from "./scanner-manager.js";
@@ -222,12 +223,20 @@ async function combineAndUpload(sessionId: string = 'default') {
 
 // === Helper function to load HTML templates ===
 function loadTemplate(templateName: string): string {
-  const templatePath = path.join(process.cwd(), "templates", `${templateName}.html`);
+  // Prefer template path relative to the script directory (works even when the working directory is mounted over)
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const primaryTemplatePath = path.join(__dirname, "templates", `${templateName}.html`);
+  const fallbackTemplatePath = path.join(process.cwd(), "templates", `${templateName}.html`);
   try {
-    return fs.readFileSync(templatePath, "utf8");
-  } catch (error) {
-    console.error(`Failed to load template ${templateName}:`, error);
-    return `<html><body><h1>Error</h1><p>Template ${templateName} not found.</p></body></html>`;
+    return fs.readFileSync(primaryTemplatePath, "utf8");
+  } catch (errPrimary) {
+    try {
+      return fs.readFileSync(fallbackTemplatePath, "utf8");
+    } catch (errFallback) {
+      console.error(`Failed to load template ${templateName}:`, errPrimary, errFallback);
+      return `<html><body><h1>Error</h1><p>Template ${templateName} not found.</p></body></html>`;
+    }
   }
 }
 
