@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paperless Scanner</title>
+<style>
+body { 
+  font-family: sans-serif; 
+  margin: 2rem; 
+  background-color: #f5f5f5; 
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+h1 { 
+  color: #333; 
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+button { 
+  padding: 1rem 2rem; 
+  font-size: 1rem; 
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.primary-btn {
+  background-color: #007bff;
+  color: white;
+}
+.primary-btn:hover {
+  background-color: #0056b3;
+}
+.secondary-btn {
+  background-color: #6c757d;
+  color: white;
+}
+.secondary-btn:hover {
+  background-color: #545b62;
+}
+.primary-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+#log { 
+  margin-top: 1rem; 
+  border: 1px solid #ddd; 
+  padding: 1rem; 
+  height: 300px; 
+  overflow-y: scroll; 
+  background: #f9f9f9; 
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+.status {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: none;
+}
+.status.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.status.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.nav {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.nav a {
+  color: #007bff;
+  text-decoration: none;
+  margin: 0 1rem;
+}
+.nav a:hover {
+  text-decoration: underline;
+}
+.page-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: white;
+}
+.page-checkbox {
+  margin-right: 1rem;
+}
+.page-info {
+  flex: 1;
+}
+.page-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+.page-details {
+  font-size: 0.9rem;
+  color: #666;
+}
+.danger-btn {
+  background-color: #dc3545;
+  color: white;
+}
+.danger-btn:hover {
+  background-color: #c82333;
+}
+.danger-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #2196f3;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+  <a href="/">Scanner</a>
+  <a href="/settings">Settings</a>
+</div>
+
+<h1>📄 Paperless Scanner</h1>
+
+<div id="status" class="status"></div>
+
+<div class="controls">
+  <button id="scanBtn" class="primary-btn">🖨️ Scan Page</button>
+  <button id="testBtn" class="secondary-btn">🔧 Test Connection</button>
+</div>
+
+<div id="scanProgress" style="display: none; margin: 1rem 0; padding: 1rem; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #2196f3;">
+  <div style="display: flex; align-items: center; gap: 0.5rem;">
+    <div class="spinner"></div>
+    <span id="scanProgressText">Scanning in progress...</span>
+  </div>
+</div>
+
+<div style="margin-bottom: 2rem;">
+  <h3>📄 Scanned Pages</h3>
+  <div id="pagesContainer">
+    <div id="pagesLoading" style="display: none;">Loading pages...</div>
+    <div id="pagesEmpty" style="color: #666; font-style: italic;">No pages scanned yet</div>
+    <div id="pagesList"></div>
+  </div>
+  
+  <div id="pagesControls" style="margin-top: 1rem; display: none;">
+    <button id="selectAllBtn" class="secondary-btn" style="margin-right: 0.5rem;">Select All</button>
+    <button id="selectNoneBtn" class="secondary-btn" style="margin-right: 1rem;">Select None</button>
+    <button id="combineUploadBtn" class="primary-btn" style="margin-right: 0.5rem;">📤 Combine & Upload All</button>
+    <button id="deleteSelectedBtn" class="danger-btn" style="margin-right: 1rem;">🗑️ Delete Selected</button>
+    <button id="clearAllBtn" class="danger-btn">🗑️ Clear All</button>
+  </div>
+</div>
+
+<div>
+  <h3>📜 Scan Log</h3>
+  <div id="log"></div>
+</div>
+</div>
+
+<script>
+const logEl = document.getElementById("log");
+const scanBtn = document.getElementById("scanBtn");
+const testBtn = document.getElementById("testBtn");
+const statusEl = document.getElementById("status");
+
+// Page management elements
+const pagesContainer = document.getElementById("pagesContainer");
+const pagesLoading = document.getElementById("pagesLoading");
+const pagesEmpty = document.getElementById("pagesEmpty");
+const pagesList = document.getElementById("pagesList");
+const pagesControls = document.getElementById("pagesControls");
+const selectAllBtn = document.getElementById("selectAllBtn");
+const selectNoneBtn = document.getElementById("selectNoneBtn");
+const combineUploadBtn = document.getElementById("combineUploadBtn");
+const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
+const clearAllBtn = document.getElementById("clearAllBtn");
+
+// Progress indicator elements
+const scanProgress = document.getElementById("scanProgress");
+const scanProgressText = document.getElementById("scanProgressText");
+
+let currentPages = [];
+
+function showStatus(message, type = 'success') {
+  statusEl.textContent = message;
+  statusEl.className = `status ${type}`;
+  statusEl.style.display = 'block';
+  setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, 5000);
+}
+
+scanBtn.onclick = async () => {
+  try {
+    scanBtn.disabled = true;
+    scanBtn.textContent = "⏳ Scanning...";
+    scanProgress.style.display = "block";
+    scanProgressText.textContent = "Scanning in progress...";
+    
+    const response = await fetch("/scan", { method: "POST" });
+    const result = await response.json();
+    
+    if (response.ok) {
+      scanProgressText.textContent = "Scan complete! Processing...";
+      showStatus("Page scan started!", "success");
+      // Refresh pages list after a short delay
+      setTimeout(() => {
+        loadPages();
+        scanProgress.style.display = "none";
+      }, 2000);
+    } else {
+      scanProgress.style.display = "none";
+      showStatus(`Error: ${result.error || 'Scan failed'}`, "error");
+    }
+  } catch (error) {
+    scanProgress.style.display = "none";
+    showStatus(`Network error: ${error.message}`, "error");
+  } finally {
+    scanBtn.disabled = false;
+    scanBtn.textContent = "🖨️ Scan Page";
+  }
+};
+
+testBtn.onclick = async () => {
+  try {
+    testBtn.disabled = true;
+    testBtn.textContent = "&#x23F3; Testing...";
+    
+    const response = await fetch("/test-connection", { method: "POST" });
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus("Connection test successful!", "success");
+    } else {
+      showStatus(`Connection test failed: ${result.error}`, "error");
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, "error");
+  } finally {
+    testBtn.disabled = false;
+    testBtn.textContent = "&#x1F527; Test Connection";
+  }
+};
+
+// Event stream for logs
+const evtSource = new EventSource("/logs");
+evtSource.onmessage = (event) => {
+  const timestamp = new Date().toLocaleTimeString();
+  logEl.innerHTML += `<div>[${timestamp}] ${event.data}</div>`;
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+evtSource.onerror = (error) => {
+  console.error('EventSource failed:', error);
+  logEl.innerHTML += `<div style="color: red;">[${new Date().toLocaleTimeString()}] Connection to log stream lost. Refresh page to reconnect.</div>`;
+};
+
+// Page management functions
+async function loadPages() {
+  try {
+    pagesLoading.style.display = 'block';
+    pagesEmpty.style.display = 'none';
+    
+    const response = await fetch('/api/sessions/default');
+    const data = await response.json();
+    
+    if (response.ok && data.session) {
+      currentPages = data.session.pages || [];
+      renderPages();
+    } else if (response.status === 404) {
+      // No default session exists yet
+      currentPages = [];
+      renderPages();
+    } else {
+      showStatus(`Failed to load pages: ${data.error}`, 'error');
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, 'error');
+  } finally {
+    pagesLoading.style.display = 'none';
+  }
+}
+
+function renderPages() {
+  pagesList.innerHTML = '';
+  
+  if (currentPages.length === 0) {
+    pagesEmpty.style.display = 'block';
+    pagesControls.style.display = 'none';
+  } else {
+    pagesEmpty.style.display = 'none';
+    pagesControls.style.display = 'block';
+    
+    currentPages.forEach((page, index) => {
+      const pageEl = document.createElement('div');
+      pageEl.className = 'page-item';
+      
+      const timestamp = new Date(page.timestamp).toLocaleString();
+      const size = formatFileSize(page.size);
+      
+      pageEl.innerHTML = `
+        <input type="checkbox" class="page-checkbox" data-page-id="${page.filepath}" id="page-${index}">
+        <div class="page-info">
+          <div class="page-name">Page ${page.pageNumber}: ${page.filename}</div>
+          <div class="page-details">${timestamp} • ${size}</div>
+        </div>
+      `;
+      
+      pagesList.appendChild(pageEl);
+    });
+  }
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function getSelectedPageIds() {
+  const checkboxes = document.querySelectorAll('.page-checkbox:checked');
+  const pageIds = Array.from(checkboxes).map(cb => cb.dataset.pageId).filter(id => id);
+  console.log('Selected page IDs:', pageIds);
+  return pageIds;
+}
+
+function updateCheckboxes(checked) {
+  const checkboxes = document.querySelectorAll('.page-checkbox');
+  checkboxes.forEach(cb => cb.checked = checked);
+}
+
+// Page control handlers
+selectAllBtn.onclick = () => updateCheckboxes(true);
+selectNoneBtn.onclick = () => updateCheckboxes(false);
+
+combineUploadBtn.onclick = async () => {
+  if (currentPages.length === 0) {
+    showStatus('No pages to upload', 'error');
+    return;
+  }
+  
+  try {
+    combineUploadBtn.disabled = true;
+    combineUploadBtn.textContent = '⏳ Processing...';
+    
+    const response = await fetch('/api/combine-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: 'default' })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus(`Processing ${currentPages.length} page(s) for upload...`, 'success');
+      setTimeout(loadPages, 3000); // Refresh after processing
+    } else {
+      showStatus(`Upload failed: ${result.error}`, 'error');
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, 'error');
+  } finally {
+    combineUploadBtn.disabled = false;
+    combineUploadBtn.textContent = '📤 Combine & Upload All';
+  }
+};
+
+deleteSelectedBtn.onclick = async () => {
+  const selectedPageIds = getSelectedPageIds();
+  
+  if (selectedPageIds.length === 0) {
+    showStatus('Please select at least one page to delete', 'error');
+    return;
+  }
+  
+  if (!confirm(`Delete ${selectedPageIds.length} selected page(s)?`)) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/delete-pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        sessionId: 'default',
+        pageIds: selectedPageIds 
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus(`Deleted ${result.deletedCount} page(s)`, 'success');
+      loadPages();
+    } else {
+      showStatus(`Delete failed: ${result.error}`, 'error');
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, 'error');
+  }
+};
+
+clearAllBtn.onclick = async () => {
+  if (currentPages.length === 0) {
+    showStatus('No pages to clear', 'error');
+    return;
+  }
+  
+  if (!confirm(`Clear all ${currentPages.length} page(s)? This cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/clear-session', { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: 'default' })
+    });
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus(`Cleared ${result.deletedCount} page(s)`, 'success');
+      loadPages();
+    } else {
+      showStatus(`Clear failed: ${result.error}`, 'error');
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, 'error');
+  }
+};
+
+// Load pages when the page loads
+loadPages();
+
+// Auto-refresh pages every 10 seconds
+setInterval(loadPages, 10000);
+</script>
+</body>
+</html>

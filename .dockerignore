@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+dist
+build
+.vscode
+*.log
+*.tgz
+.env.local
+.DS_Store
+**/node_modules

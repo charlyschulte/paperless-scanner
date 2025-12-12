@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  scanner:
+    build: .
+    image: ${DOCKER_IMAGE:-paperless-scanner:latest}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./scans:/tmp
+      - ./config.json:/usr/src/app/config.json:ro
+      - ./templates:/usr/src/app/templates:ro
+      - ./scan-output:/tmp
+    # Scanner containers generally need host device access. Provide guidance to run with --device or privileged
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"
+    network_mode: host
+    restart: unless-stopped
+    privileged: true

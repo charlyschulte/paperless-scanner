@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scanner Settings - Paperless Scanner</title>
+<style>
+body { 
+  font-family: sans-serif; 
+  margin: 2rem; 
+  background-color: #f5f5f5; 
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+h1 { 
+  color: #333; 
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.form-group {
+  margin-bottom: 1.5rem;
+}
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+input, select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+}
+button { 
+  padding: 1rem 2rem; 
+  font-size: 1rem; 
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+}
+.primary-btn {
+  background-color: #007bff;
+  color: white;
+}
+.primary-btn:hover {
+  background-color: #0056b3;
+}
+.secondary-btn {
+  background-color: #6c757d;
+  color: white;
+}
+.secondary-btn:hover {
+  background-color: #545b62;
+}
+.danger-btn {
+  background-color: #dc3545;
+  color: white;
+}
+.danger-btn:hover {
+  background-color: #c82333;
+}
+.status {
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: none;
+}
+.status.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.status.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.nav {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.nav a {
+  color: #007bff;
+  text-decoration: none;
+  margin: 0 1rem;
+}
+.nav a:hover {
+  text-decoration: underline;
+}
+.help-text {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+.tags-input {
+  position: relative;
+}
+.tags-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.tag {
+  background-color: #e9ecef;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+.tag .remove {
+  margin-left: 0.5rem;
+  cursor: pointer;
+  color: #666;
+}
+.tag .remove:hover {
+  color: #dc3545;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+  <a href="/">Scanner</a>
+  <a href="/settings">Settings</a>
+</div>
+
+<h1>⚙️ Scanner Settings</h1>
+
+<div id="status" class="status"></div>
+
+<form id="settingsForm">
+  <div class="form-group">
+    <label for="paperlessApiUrl">Paperless-ngx API URL</label>
+    <input type="url" id="paperlessApiUrl" name="paperlessApiUrl" required 
+           placeholder="http://192.168.1.100:8000">
+    <div class="help-text">The base URL of your Paperless-ngx installation (without /api)</div>
+  </div>
+
+  <div class="form-group">
+    <label for="paperlessApiToken">API Token</label>
+    <input type="password" id="paperlessApiToken" name="paperlessApiToken" required 
+           placeholder="Your Paperless-ngx API token">
+    <div class="help-text">Get this from your Paperless-ngx profile page</div>
+  </div>
+
+  <div class="form-group">
+    <label for="scanOutputDir">Scan Output Directory</label>
+    <input type="text" id="scanOutputDir" name="scanOutputDir" required 
+           placeholder="/tmp">
+    <div class="help-text">Temporary directory for storing scanned documents</div>
+  </div>
+
+  <div class="form-group">
+    <label for="scanResolution">Scan Resolution (DPI)</label>
+    <select id="scanResolution" name="scanResolution">
+      <option value="150">150 DPI (Fast, smaller files)</option>
+      <option value="300">300 DPI (Recommended)</option>
+      <option value="600">600 DPI (High quality, larger files)</option>
+    </select>
+    <div class="help-text">Higher resolution means better quality but larger files</div>
+  </div>
+
+  <div class="form-group">
+    <label for="scannerDeviceUrl">Scanner Device URL (Optional)</label>
+    <input type="text" id="scannerDeviceUrl" name="scannerDeviceUrl" 
+           placeholder="e.g., escl:https://192.168.178.188:443">
+    <div class="help-text">Leave empty for auto-detection. Format: escl:https://IP:PORT or other SANE device format</div>
+  </div>
+
+  <div class="form-group">
+    <label for="defaultTags">Default Tags</label>
+    <div class="tags-input">
+      <input type="text" id="newTag" placeholder="Add a tag and press Enter">
+      <div class="help-text">Tags that will be automatically applied to scanned documents</div>
+      <div id="tagsDisplay" class="tags-display"></div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="testUpload">Test File Upload</label>
+    <input type="file" id="testUpload" accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif" style="margin-bottom: 0.5rem;">
+    <div class="help-text">Select a document file to test uploading to Paperless-ngx</div>
+    <button type="button" id="uploadTestBtn" class="secondary-btn" style="margin-top: 0.5rem;" disabled>📤 Test Upload</button>
+  </div>
+
+  <div class="form-group">
+    <button type="submit" class="primary-btn">💾 Save Settings</button>
+    <button type="button" id="testBtn" class="secondary-btn">🔧 Test Connection</button>
+    <button type="button" id="resetBtn" class="danger-btn">🔄 Reset to Defaults</button>
+  </div>
+</form>
+</div>
+
+<script>
+let currentSettings = {};
+let defaultTags = [];
+
+const statusEl = document.getElementById("status");
+const form = document.getElementById("settingsForm");
+const testBtn = document.getElementById("testBtn");
+const resetBtn = document.getElementById("resetBtn");
+const newTagInput = document.getElementById("newTag");
+const tagsDisplay = document.getElementById("tagsDisplay");
+const testUploadInput = document.getElementById("testUpload");
+const uploadTestBtn = document.getElementById("uploadTestBtn");
+
+function showStatus(message, type = 'success') {
+  statusEl.textContent = message;
+  statusEl.className = `status ${type}`;
+  statusEl.style.display = 'block';
+  setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, 5000);
+}
+
+function renderTags() {
+  tagsDisplay.innerHTML = '';
+  defaultTags.forEach((tag, index) => {
+    const tagEl = document.createElement('div');
+    tagEl.className = 'tag';
+    tagEl.innerHTML = `
+      ${tag}
+      <span class="remove" onclick="removeTag(${index})">✕</span>
+    `;
+    tagsDisplay.appendChild(tagEl);
+  });
+}
+
+function addTag(tag) {
+  tag = tag.trim();
+  if (tag && !defaultTags.includes(tag)) {
+    defaultTags.push(tag);
+    renderTags();
+  }
+}
+
+function removeTag(index) {
+  defaultTags.splice(index, 1);
+  renderTags();
+}
+
+// Load settings on page load
+async function loadSettings() {
+  try {
+    const response = await fetch("/api/settings");
+    if (response.ok) {
+      currentSettings = await response.json();
+      
+      // Populate form
+      document.getElementById("paperlessApiUrl").value = currentSettings.paperlessApiUrl || '';
+      document.getElementById("paperlessApiToken").value = currentSettings.paperlessApiToken || '';
+      document.getElementById("scanOutputDir").value = currentSettings.scanOutputDir || '/tmp';
+      document.getElementById("scanResolution").value = currentSettings.scanResolution || 300;
+      document.getElementById("scannerDeviceUrl").value = currentSettings.scannerDeviceUrl || '';
+      
+      defaultTags = currentSettings.defaultTags || ['scanned', 'automated'];
+      renderTags();
+    }
+  } catch (error) {
+    showStatus(`Failed to load settings: ${error.message}`, "error");
+  }
+}
+
+// Save settings
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  
+  const formData = new FormData(form);
+  const settings = {
+    paperlessApiUrl: formData.get('paperlessApiUrl'),
+    paperlessApiToken: formData.get('paperlessApiToken'),
+    scanOutputDir: formData.get('scanOutputDir'),
+    scanResolution: parseInt(formData.get('scanResolution')),
+    scannerDeviceUrl: formData.get('scannerDeviceUrl'),
+    defaultTags: defaultTags
+  };
+
+  try {
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings)
+    });
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus("Settings saved successfully!", "success");
+      currentSettings = settings;
+    } else {
+      showStatus(`Failed to save settings: ${result.error}`, "error");
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, "error");
+  }
+};
+
+// Test connection
+testBtn.onclick = async () => {
+  try {
+    testBtn.disabled = true;
+    testBtn.textContent = "⏳ Testing...";
+    
+    const response = await fetch("/test-connection", { method: "POST" });
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus("Connection test successful!", "success");
+    } else {
+      showStatus(`Connection test failed: ${result.error}`, "error");
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, "error");
+  } finally {
+    testBtn.disabled = false;
+    testBtn.textContent = "🔧 Test Connection";
+  }
+};
+
+// Reset settings
+resetBtn.onclick = async () => {
+  if (confirm("Are you sure you want to reset all settings to defaults? This cannot be undone.")) {
+    try {
+      const response = await fetch("/api/settings/reset", { method: "POST" });
+      const result = await response.json();
+      
+      if (response.ok) {
+        showStatus("Settings reset to defaults!", "success");
+        await loadSettings(); // Reload the form
+      } else {
+        showStatus(`Failed to reset settings: ${result.error}`, "error");
+      }
+    } catch (error) {
+      showStatus(`Network error: ${error.message}`, "error");
+    }
+  }
+};
+
+// File upload test functionality
+testUploadInput.onchange = () => {
+  uploadTestBtn.disabled = !testUploadInput.files || testUploadInput.files.length === 0;
+};
+
+uploadTestBtn.onclick = async () => {
+  const file = testUploadInput.files?.[0];
+  if (!file) {
+    showStatus("Please select a file first", "error");
+    return;
+  }
+
+  try {
+    uploadTestBtn.disabled = true;
+    uploadTestBtn.textContent = "⏳ Uploading...";
+    
+    const formData = new FormData();
+    formData.append("document", file);
+    
+    // Add current default tags if any
+    if (defaultTags && defaultTags.length > 0) {
+      defaultTags.forEach(tag => {
+        formData.append("tags", tag);
+      });
+    }
+    
+    const response = await fetch("/api/test-upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      showStatus(`Upload successful! ${result.message || 'File uploaded to Paperless-ngx'}`, "success");
+      testUploadInput.value = ''; // Clear the file input
+    } else {
+      showStatus(`Upload failed: ${result.error}`, "error");
+    }
+  } catch (error) {
+    showStatus(`Network error: ${error.message}`, "error");
+  } finally {
+    uploadTestBtn.disabled = true;
+    uploadTestBtn.textContent = "📤 Test Upload";
+  }
+};
+
+// Add tag on Enter key
+newTagInput.onkeypress = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addTag(newTagInput.value);
+    newTagInput.value = '';
+  }
+};
+
+// Load settings when page loads
+loadSettings();
+
+// Make removeTag function global
+window.removeTag = removeTag;
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "paperless-scanner",
+  "module": "index.ts",
+  "type": "module",
+  "description": "A Bun-based scanner bridge that interfaces with Paperless-ngx",
+  "scripts": {
+    "start": "bun index.ts",
+    "dev": "bun index.ts"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "form-data": "^4.0.4",
+    "node-fetch": "^3.3.2",
+    "pdf-lib": "^1.17.1"
+  }
+}
