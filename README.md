@@ -5,8 +5,7 @@ A lightweight web-based scanner bridge for Paperless-ngx — runs as a Docker co
 ## Features
 
 - 📄 Web-based scanning interface to trigger scans
-- ⚙️ Persistent settings (saved to `config.json`)
- - ⚙️ Persistent settings (saved to `config/config.json`)
+- ⚙️ Persistent settings (saved to `config/config.json`)
 - 🔧 Connection testing to verify Paperless-ngx access
 - 📜 Real-time logs (server-sent events)
 - 🏷️ Configurable default tags for uploads
@@ -29,6 +28,10 @@ docker run --rm -it \
    --privileged \
    fakeridoo/paperless-scanner:latest
 ```
+
+Note: If `config/config.json` is not present in the bound host directory, the container entrypoint will create a default `config/config.json` file at first boot. You can then edit this file with your Paperless-ngx URL and API token.
+
+If you previously mounted a single `config.json` file into `/usr/src/app/config.json`, the entrypoint will automatically move it into the new `config/config.json` path for backwards compatibility.
 
 Note: The template HTML files are baked into the Docker image at `/usr/share/paperless-scanner/templates` and are used by the application at runtime. Avoid mounting an external `templates` folder over `/usr/src/app` because that can mask the files from the image. If you're developing with a host bind mounting the project into `/usr/src/app`, make sure the host copy includes `templates/` or omit the bind mount so the container uses the built-in templates.
 

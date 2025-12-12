@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const SETTINGS_FILE = path.join(process.cwd(), "config", "config.json");
+const LEGACY_SETTINGS_FILE = path.join(process.cwd(), "config.json");
 
 class SettingsManager {
   private settings: Settings;
@@ -30,8 +31,13 @@ class SettingsManager {
 
   private loadSettings(): Settings {
     try {
-      if (fs.existsSync(SETTINGS_FILE)) {
-        const data = fs.readFileSync(SETTINGS_FILE, "utf8");
+      let configFileToRead = SETTINGS_FILE;
+      if (!fs.existsSync(configFileToRead) && fs.existsSync(LEGACY_SETTINGS_FILE)) {
+        // If the legacy single-file config.json exists (mounted), prefer and use it
+        configFileToRead = LEGACY_SETTINGS_FILE;
+      }
+      if (fs.existsSync(configFileToRead)) {
+        const data = fs.readFileSync(configFileToRead, "utf8");
         const savedSettings = JSON.parse(data);
         return { ...DEFAULT_SETTINGS, ...savedSettings };
       }

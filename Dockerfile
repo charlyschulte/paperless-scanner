@@ -38,6 +38,9 @@ RUN chmod +x /usr/src/app/entrypoint.sh || true
 # Copy templates to a stable location that won't be masked by mounting /usr/src/app
 COPY --from=builder /usr/src/app/templates /usr/share/paperless-scanner/templates
 RUN mkdir -p /usr/share/paperless-scanner/templates && chown -R root:root /usr/share/paperless-scanner
+# Create a persistent config directory that can be mounted by the host
+RUN mkdir -p /usr/src/app/config
+VOLUME ["/usr/src/app/config"]
 
 # Default command: run the entrypoint which prepares config and starts the app
 CMD ["/usr/src/app/entrypoint.sh"]
