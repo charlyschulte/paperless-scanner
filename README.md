@@ -29,6 +29,8 @@ docker run --rm -it \
    fakeridoo/paperless-scanner:latest
 ```
 
+Note: The template HTML files are baked into the Docker image at `/usr/share/paperless-scanner/templates` and are used by the application at runtime. Avoid mounting an external `templates` folder over `/usr/src/app` because that can mask the files from the image. If you're developing with a host bind mounting the project into `/usr/src/app`, make sure the host copy includes `templates/` or omit the bind mount so the container uses the built-in templates.
+
 ## Docker Compose (example)
 
 ```yaml
